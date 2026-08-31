@@ -1,0 +1,12 @@
+<view class="container">
+  <view class="title">吸烟模拟器</view>
+  <view class="sub">项目已就绪，开发中…</view>
+
+  <view class="counter">
+    <text class="num">{{totalSmoked}}</text>
+    <text class="unit">根</text>
+  </view>
+
+  <button class="btn-smoke" bindtap="onSmoke">点一根</button>
+  <button class="btn-reset" bindtap="onReset">清零</button>
+</view>

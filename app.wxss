@@ -1,0 +1,22 @@
+/* 全局样式：暗色主题 */
+page {
+  background-color: #16181d;
+  color: #e6e6e6;
+  font-size: 28rpx;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 40rpx 32rpx;
+}
+
+button {
+  background-color: #c8a063;
+  color: #16181d;
+}

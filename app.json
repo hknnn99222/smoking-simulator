@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "吸烟模拟器",
+    "navigationBarBackgroundColor": "#16181d",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#16181d",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

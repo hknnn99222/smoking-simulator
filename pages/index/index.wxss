@@ -1,0 +1,42 @@
+.title {
+  margin-top: 80rpx;
+  font-size: 48rpx;
+  font-weight: 600;
+  letter-spacing: 4rpx;
+}
+
+.sub {
+  margin-top: 16rpx;
+  color: #8a8f99;
+  font-size: 26rpx;
+}
+
+.counter {
+  display: flex;
+  align-items: baseline;
+  margin-top: 120rpx;
+}
+
+.num {
+  font-size: 120rpx;
+  font-weight: 700;
+  color: #c8a063;
+}
+
+.unit {
+  margin-left: 12rpx;
+  color: #8a8f99;
+}
+
+.btn-smoke {
+  margin-top: 140rpx;
+  width: 70%;
+}
+
+.btn-reset {
+  margin-top: 32rpx;
+  width: 70%;
+  background-color: transparent;
+  color: #8a8f99;
+  font-size: 26rpx;
+}

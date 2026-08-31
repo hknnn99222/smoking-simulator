@@ -1,0 +1,17 @@
+# Windows / 系统文件
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 微信开发者工具
+project.private.config.json
+
+# 依赖
+node_modules/
+
+# 构建产物
+miniprogram_npm/
+dist/
+
+# 日志
+*.log
