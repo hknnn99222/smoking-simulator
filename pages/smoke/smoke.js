@@ -56,7 +56,11 @@ Page({
         filterLen: len * 0.26,
         h: 30
       }
-      this.startLoop()
+      // 等页面转场动画结束（~250ms）再开始绘制：
+      // canvas 同层渲染在转场期间可能抢先出现，看起来像画在上一页上
+      setTimeout(() => {
+        if (!this.rafActive) this.startLoop()
+      }, 250)
     })
   },
 
@@ -130,6 +134,7 @@ Page({
   finish() {
     this.setData({ finished: true })
     this.inhaling = false
+    this.finishAt = this.t || Date.now() // 烟蒂渐隐的起点
     wx.vibrateShort({ type: 'heavy' })
     // 清场：残留烟雾 0.5 秒内散尽，避免盖住随后弹出的结算卡
     for (const p of this.particles) {
@@ -169,6 +174,7 @@ Page({
     this.inhaling = false
     this.started = false
     this.added = false
+    this.finishAt = 0
     this.particles = []
     this.setData({ showSettle: false, finished: false, puffs: 0, showHint: true })
     this.startLoop()
@@ -403,6 +409,17 @@ Page({
     const h = g.h
     const top = g.cy - h / 2
 
+    // 烧完 1.2s 后整支烟（含烟蒂）渐隐掐灭；消失后仅剩烟灰/余烟粒子
+    let cigAlpha = 1
+    if (this.finishAt) {
+      cigAlpha = Math.max(0, 1 - (now - this.finishAt - 1200) / 600)
+      if (cigAlpha <= 0) {
+        this.drawParticles(now, smokeRGB, H)
+        return
+      }
+    }
+    ctx.globalAlpha = cigAlpha
+
     // 投影
     ctx.fillStyle = 'rgba(0,0,0,0.3)'
     ctx.beginPath()
@@ -425,7 +442,7 @@ Page({
       ctx.lineTo(x, top + h - ringInset)
       ctx.stroke()
     })
-    ctx.globalAlpha = 1
+    ctx.globalAlpha = cigAlpha
 
     // 烟体（燃烧缩短）
     if (tip > g.x0 + g.filterLen + 1) {
@@ -470,7 +487,7 @@ Page({
       const coreR = 6 + 2 * glow
       ctx.globalAlpha = 0.55 + 0.45 * glow
       ctx.drawImage(this.sprites.core, emberX - coreR, g.cy - coreR, coreR * 2, coreR * 2)
-      ctx.globalAlpha = 1
+      ctx.globalAlpha = cigAlpha
     } else {
       // 外圈光晕
       const gr = ctx.createRadialGradient(emberX, g.cy, 0, emberX, g.cy, 30 + 18 * glow)
@@ -491,8 +508,14 @@ Page({
       ctx.fill()
     }
     ctx.globalCompositeOperation = 'source-over'
+    ctx.globalAlpha = 1
 
-    // 粒子：跳过近透明/离屏；烟雾走精灵图，烟灰走实心小圆
+    this.drawParticles(now, smokeRGB, H)
+  },
+
+  // 粒子：跳过近透明/离屏；烟雾走精灵图，烟灰走实心小圆
+  drawParticles(now, smokeRGB, H) {
+    const ctx = this.ctx
     const sp = this.sprites
     for (const p of this.particles) {
       if (!p.alpha || p.alpha < 0.02) continue
