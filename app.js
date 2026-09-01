@@ -1,15 +1,11 @@
-// 吸烟模拟器 - 小程序入口
+// 戒一根 - 小程序入口
+const calc = require('./utils/calc')
+
 App({
   onLaunch() {
-    // 展示本地存储能力示例：累计吸烟数
-    const logs = wx.getStorageSync('logs') || []
-    logs.unshift(Date.now())
-    wx.setStorageSync('logs', logs)
+    // 初始化存储（默认档案 + 初始烟盒皮肤 + 旧数据迁移）
+    calc.initStorage()
   },
 
-  globalData: {
-    // 全局数据：吸烟统计
-    totalSmoked: 0,
-    todaySmoked: 0
-  }
+  globalData: {}
 })

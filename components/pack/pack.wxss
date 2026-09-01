@@ -1,0 +1,175 @@
+.pack {
+  position: relative;
+  border-radius: 14rpx;
+  border: 3rpx solid;
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.45);
+}
+
+.size-hero {
+  width: 260rpx;
+  height: 346rpx;
+}
+.size-grid {
+  width: 186rpx;
+  height: 248rpx;
+}
+.size-draw {
+  width: 330rpx;
+  height: 440rpx;
+}
+.size-bg {
+  width: 750rpx;
+  height: 1000rpx;
+  border-radius: 40rpx;
+  box-shadow: none;
+}
+
+/* 盒盖（上 22%）：略亮 + 高光 */
+.lid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22%;
+}
+.lid-gloss {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+}
+.lid-line {
+  position: absolute;
+  top: 22%;
+  left: 0;
+  right: 0;
+  height: 3rpx;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* 金色环带 */
+.band {
+  position: absolute;
+  top: 30%;
+  left: 10%;
+  right: 10%;
+  height: 10rpx;
+  border-radius: 6rpx;
+  opacity: 0.9;
+}
+
+.brand-box {
+  position: absolute;
+  top: 40%;
+  left: 0;
+  right: 0;
+  bottom: 12%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.brand {
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 6rpx;
+  text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.35);
+}
+.label {
+  margin-top: 10rpx;
+  font-size: 20rpx;
+  opacity: 0.8;
+  letter-spacing: 4rpx;
+}
+.size-draw .brand {
+  font-size: 42rpx;
+}
+.size-grid .brand {
+  font-size: 26rpx;
+  letter-spacing: 3rpx;
+}
+.size-grid .label {
+  font-size: 16rpx;
+}
+
+/* 剪影模式：未拥有 */
+.silhouette {
+  filter: grayscale(1) brightness(0.35);
+}
+.silhouette .q {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72rpx;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  filter: none;
+}
+
+/* ---------- 花纹覆盖层 ---------- */
+.pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+.pattern-none {
+  display: none;
+}
+.pattern-clouds {
+  background:
+    radial-gradient(60rpx 40rpx at 30% 60%, rgba(255, 255, 255, 0.22), transparent 70%),
+    radial-gradient(80rpx 50rpx at 75% 80%, rgba(255, 255, 255, 0.16), transparent 70%);
+}
+.pattern-dots {
+  background: radial-gradient(rgba(255, 255, 255, 0.28) 3rpx, transparent 4rpx);
+  background-size: 28rpx 28rpx;
+}
+.pattern-frost {
+  background: repeating-linear-gradient(
+    115deg,
+    rgba(160, 220, 255, 0.1) 0,
+    rgba(160, 220, 255, 0.1) 2rpx,
+    transparent 2rpx,
+    transparent 14rpx
+  );
+}
+.pattern-mountain {
+  background:
+    radial-gradient(120rpx 90rpx at 20% 100%, rgba(220, 235, 220, 0.16), transparent 70%),
+    radial-gradient(150rpx 110rpx at 85% 100%, rgba(220, 235, 220, 0.12), transparent 70%);
+}
+.pattern-rays {
+  background: repeating-conic-gradient(
+    from 0deg at 50% 118%,
+    rgba(255, 255, 255, 0.1) 0deg 6deg,
+    transparent 6deg 16deg
+  );
+}
+.pattern-foil {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.12) 0,
+    rgba(255, 255, 255, 0.12) 3rpx,
+    transparent 3rpx,
+    transparent 12rpx
+  ),
+  repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.08) 0,
+    rgba(255, 255, 255, 0.08) 3rpx,
+    transparent 3rpx,
+    transparent 16rpx
+  );
+}

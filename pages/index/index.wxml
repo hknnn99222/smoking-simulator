@@ -1,12 +1,52 @@
 <view class="container">
-  <view class="title">吸烟模拟器</view>
-  <view class="sub">项目已就绪，开发中…</view>
-
-  <view class="counter">
-    <text class="num">{{totalSmoked}}</text>
-    <text class="unit">根</text>
+  <!-- 今日三连数据 -->
+  <view class="stats anim-fade-up">
+    <view class="stat">
+      <text class="v">{{today}}</text>
+      <text class="k">今日 · 根</text>
+    </view>
+    <view class="divider"></view>
+    <view class="stat">
+      <text class="v">{{moneyText}}</text>
+      <text class="k">累计省下</text>
+    </view>
+    <view class="divider"></view>
+    <view class="stat">
+      <text class="v">{{lifeText}}</text>
+      <text class="k">寿命 +</text>
+    </view>
   </view>
 
-  <button class="btn-smoke" bindtap="onSmoke">点一根</button>
-  <button class="btn-reset" bindtap="onReset">清零</button>
+  <!-- 当前烟盒 -->
+  <view class="hero anim-pop" bindtap="goBox">
+    <pack skin="{{skin}}" size="hero" />
+    <view class="skin-meta">
+      <text class="skin-name">{{skin.name}}</text>
+      <view class="rarity-tag rarity-{{skin.rarity}}">{{rarityName}}</view>
+    </view>
+    <view class="change-hint">点击换肤 ›</view>
+  </view>
+
+  <!-- 连续戒断 -->
+  <view class="streak anim-fade-up">🔥 连续戒断 <text class="streak-num">{{streak}}</text> 天</view>
+
+  <!-- 健康里程碑 -->
+  <view class="ms anim-fade-up">
+    <view class="ms-head">
+      <text class="ms-title">下一站 · {{ms.title}}</text>
+      <text class="ms-desc">{{ms.desc}}</text>
+    </view>
+    <view class="ms-bar">
+      <view class="ms-fill" style="width: {{ms.pct}}%"></view>
+    </view>
+  </view>
+
+  <!-- 点烟入口 -->
+  <view class="cta">
+    <view wx:if="{{tickets > 0}}" class="ticket-tip anim-pop" bindtap="goBox">
+      🎁 攒满一包，可开盒 ×{{tickets}}
+    </view>
+    <button class="btn-gold btn-light" bindtap="onSmoke">🚬 点一根</button>
+    <view class="hint">按住吸入 · 松开吐烟</view>
+  </view>
 </view>

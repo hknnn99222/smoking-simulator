@@ -1,0 +1,93 @@
+.container {
+  align-items: stretch;
+  gap: 28rpx;
+  padding-bottom: 60rpx;
+}
+
+/* 概况卡 */
+.summary {
+  display: flex;
+  flex-direction: column;
+}
+.sum-row {
+  display: flex;
+  justify-content: space-around;
+}
+.sum-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sum-v {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #c8a063;
+}
+.sum-k {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #8a8f99;
+}
+.rule {
+  margin-top: 22rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8a8f99;
+}
+.draw-btn {
+  margin-top: 24rpx;
+  height: 84rpx;
+  line-height: 84rpx;
+  font-size: 30rpx;
+}
+
+/* 九宫格 */
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.cell {
+  position: relative;
+  width: 31%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding: 20rpx 0 18rpx;
+  border-radius: 20rpx;
+  border: 2rpx solid transparent;
+  box-sizing: border-box;
+}
+.cell.current {
+  border-color: rgba(200, 160, 99, 0.55);
+  background: rgba(200, 160, 99, 0.06);
+}
+.cell-name {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #d8dce2;
+}
+.cell .rarity-tag {
+  margin-top: 10rpx;
+}
+.dup {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  font-size: 20rpx;
+  color: #e8b64c;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 16rpx;
+  padding: 4rpx 12rpx;
+}
+.using {
+  position: absolute;
+  top: 10rpx;
+  left: 10rpx;
+  font-size: 20rpx;
+  color: #16181d;
+  background: #c8a063;
+  border-radius: 16rpx;
+  padding: 4rpx 12rpx;
+}

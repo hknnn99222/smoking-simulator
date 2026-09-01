@@ -1,0 +1,40 @@
+<view class="container">
+  <!-- 收集概况 -->
+  <view class="card summary anim-fade-up">
+    <view class="sum-row">
+      <view class="sum-item">
+        <text class="sum-v">{{tickets}}</text>
+        <text class="sum-k">可开盒</text>
+      </view>
+      <view class="sum-item">
+        <text class="sum-v">{{draws}}</text>
+        <text class="sum-k">已开盒</text>
+      </view>
+      <view class="sum-item">
+        <text class="sum-v">{{collected}}/{{total}}</text>
+        <text class="sum-k">收集{{allCollected ? ' · 🏆 全收集' : ''}}</text>
+      </view>
+    </view>
+    <view class="rule">每戒满一包（20 根）得 1 次开盒机会</view>
+    <button class="btn-gold draw-btn" bindtap="onDraw">
+      🎁 开一包{{tickets > 0 ? ' ×' + tickets : ''}}
+    </button>
+  </view>
+
+  <!-- 烟盒九宫格 -->
+  <view class="grid">
+    <view
+      wx:for="{{list}}"
+      wx:key="skin.id"
+      class="cell anim-fade-up {{item.isCurrent ? 'current' : ''}}"
+      data-idx="{{index}}"
+      bindtap="onPick"
+    >
+      <pack skin="{{item.skin}}" size="grid" mode="{{item.owned ? 'full' : 'silhouette'}}" />
+      <view class="cell-name">{{item.owned ? item.skin.name : '？？？'}}</view>
+      <view class="rarity-tag rarity-{{item.skin.rarity}}">{{item.rarityName}}</view>
+      <view wx:if="{{item.count > 1}}" class="dup">×{{item.count}}</view>
+      <view wx:if="{{item.isCurrent}}" class="using">使用中</view>
+    </view>
+  </view>
+</view>

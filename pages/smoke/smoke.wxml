@@ -1,0 +1,58 @@
+<view class="scene">
+  <!-- 烟盒高斯模糊背景 + 压暗遮罩 -->
+  <view class="bg-wrap">
+    <view class="bg-pack">
+      <pack skin="{{skin}}" size="bg" />
+    </view>
+    <view class="bg-dim"></view>
+  </view>
+
+  <!-- 抽烟画布：按住吸入 · 松开吐烟 -->
+  <canvas
+    id="cig"
+    type="2d"
+    class="cig-canvas"
+    bindtouchstart="onTouchStart"
+    bindtouchend="onTouchEnd"
+    bindtouchcancel="onTouchEnd"
+  ></canvas>
+
+  <!-- 自定义返回 -->
+  <view class="nav-back" bindtap="onBack">‹</view>
+
+  <!-- 操作提示 -->
+  <view wx:if="{{showHint}}" class="hint anim-fade-up">按住吸入 · 松开吐烟</view>
+  <view wx:if="{{puffs > 0 && !finished}}" class="puff-count">第 {{puffs}} 口</view>
+
+  <!-- 结算卡 -->
+  <view wx:if="{{showSettle}}" class="settle-mask">
+    <view class="settle-card anim-pop">
+      <view class="s-badge">第 {{settle.total}} 根 · 戒掉了</view>
+      <view class="s-line">「{{settle.line}}」</view>
+      <view class="s-rows">
+        <view class="s-row">
+          <text class="s-k">这根省下</text>
+          <text class="s-v">{{settle.moneyText}}</text>
+        </view>
+        <view class="s-row">
+          <text class="s-k">寿命 +</text>
+          <text class="s-v">11 分钟</text>
+        </view>
+      </view>
+      <view class="s-pack">
+        <view class="s-pack-head">
+          <text>本包进度 {{settle.inPack}}/20</text>
+          <text wx:if="{{settle.ticketEarned}}" class="s-ticket">🎁 凑满一包！</text>
+        </view>
+        <view class="s-pack-bar">
+          <view class="s-pack-fill" style="width: {{settle.inPack * 5}}%"></view>
+        </view>
+      </view>
+      <view class="s-btns">
+        <button wx:if="{{settle.ticketEarned}}" class="btn-gold s-btn" bindtap="goBox">开盒</button>
+        <button class="btn-gold s-btn {{settle.ticketEarned ? 's-btn-ghost' : ''}}" bindtap="onAgain">再戒一根</button>
+        <button class="btn-ghost s-btn" bindtap="goHome">回首页</button>
+      </view>
+    </view>
+  </view>
+</view>

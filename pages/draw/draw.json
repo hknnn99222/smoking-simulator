@@ -1,0 +1,8 @@
+{
+  "usingComponents": {
+    "pack": "/components/pack/pack"
+  },
+  "navigationBarTitleText": "开盒",
+  "navigationBarBackgroundColor": "#12141a",
+  "backgroundColor": "#12141a"
+}

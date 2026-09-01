@@ -1,0 +1,49 @@
+<view class="container">
+  <view class="card anim-fade-up">
+    <view class="card-head">我的档案</view>
+
+    <view class="row">
+      <view class="row-main">
+        <view class="row-title">每包烟价</view>
+        <view class="row-sub">用于计算省下的钱（按 20 根/包折算）</view>
+      </view>
+      <view class="price-input">
+        <text class="yen">¥</text>
+        <input
+          type="digit"
+          value="{{profile.pricePerPack}}"
+          bindblur="onPriceInput"
+          placeholder="20"
+        />
+      </view>
+    </view>
+
+    <view class="row">
+      <view class="row-main">
+        <view class="row-title">每天烟量基线</view>
+        <view class="row-sub">以前一天大概抽多少根</view>
+      </view>
+      <picker range="{{cigOptions}}" value="{{cigIndex}}" bindchange="onCigsChange">
+        <view class="picker-val">{{profile.cigsPerDay}} 根 ›</view>
+      </picker>
+    </view>
+
+    <view class="row">
+      <view class="row-main">
+        <view class="row-title">戒烟起点</view>
+        <view class="row-sub">健康恢复时间线从这天开始算</view>
+      </view>
+      <picker mode="date" value="{{quitDateStr || todayStr}}" end="{{todayStr}}" bindchange="onDateChange">
+        <view class="picker-val">{{quitDateStr || '选择日期'}} ›</view>
+      </picker>
+    </view>
+  </view>
+
+  <button class="btn-danger anim-fade-up" bindtap="onClear">清空所有数据</button>
+
+  <view class="about">
+    <view>戒一根 v1.0</view>
+    <view>每戒一根 ≈ 挽回 11 分钟预期寿命（流行病学估算，仅作激励用途）</view>
+    <view>烟瘾通常 3 分钟内自然消退——先赢眼前这一根。</view>
+  </view>
+</view>

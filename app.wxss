@@ -1,4 +1,4 @@
-/* 全局样式：暗色主题 */
+/* 全局样式：暗色主题 + 烟草金 */
 page {
   background-color: #16181d;
   color: #e6e6e6;
@@ -16,7 +16,99 @@ page {
   padding: 40rpx 32rpx;
 }
 
-button {
-  background-color: #c8a063;
+/* 通用卡片 */
+.card {
+  width: 100%;
+  box-sizing: border-box;
+  background: #1e2128;
+  border-radius: 24rpx;
+  padding: 28rpx;
+}
+
+/* 主按钮 */
+.btn-gold {
+  background: linear-gradient(135deg, #d8b276, #c8a063);
   color: #16181d;
+  font-size: 34rpx;
+  font-weight: 600;
+  border-radius: 48rpx;
+  border: none;
+}
+.btn-gold::after {
+  border: none;
+}
+.btn-ghost {
+  background: transparent;
+  color: #8a8f99;
+  font-size: 26rpx;
+  border: none;
+}
+.btn-ghost::after {
+  border: none;
+}
+
+/* 稀有度标签 */
+.rarity-tag {
+  display: inline-block;
+  font-size: 20rpx;
+  line-height: 1;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid;
+}
+.rarity-common {
+  color: #aeb6c2;
+  border-color: #3a3f48;
+  background: rgba(174, 182, 194, 0.08);
+}
+.rarity-rare {
+  color: #7c8cff;
+  border-color: #3a4076;
+  background: rgba(124, 140, 255, 0.1);
+}
+.rarity-legend {
+  color: #e8b64c;
+  border-color: #6b5420;
+  background: rgba(232, 182, 76, 0.1);
+}
+
+/* 通用入场动画 */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.anim-fade-up {
+  animation: fadeUp 0.45s ease both;
+}
+.anim-pop {
+  animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }

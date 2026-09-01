@@ -1,0 +1,63 @@
+<view class="container">
+  <!-- 累计 -->
+  <view class="card anim-fade-up">
+    <view class="grid4">
+      <view class="item">
+        <text class="v">{{total}}</text>
+        <text class="k">累计戒掉</text>
+      </view>
+      <view class="item">
+        <text class="v">{{moneyText}}</text>
+        <text class="k">省下</text>
+      </view>
+      <view class="item">
+        <text class="v">{{lifeText}}</text>
+        <text class="k">寿命 +</text>
+      </view>
+      <view class="item">
+        <text class="v">{{streak}}</text>
+        <text class="k">连续天数</text>
+      </view>
+    </view>
+    <view class="sub-row">最长连续 {{longest}} 天 · 今天已挡下 {{todayCount}} 根（基线每天 {{cigsPerDay}} 根）</view>
+  </view>
+
+  <!-- 本包进度 -->
+  <view class="card anim-fade-up">
+    <view class="card-head">本包进度 <text class="gold">{{inPack}}/20</text></view>
+    <view class="bar">
+      <view class="fill" style="width: {{inPack * 5}}%"></view>
+    </view>
+    <view class="sub-row">攒满一包可开盒抽新烟盒</view>
+  </view>
+
+  <!-- 近 30 天热力图 -->
+  <view class="card anim-fade-up">
+    <view class="card-head">近 30 天</view>
+    <view class="heat">
+      <view wx:for="{{cells}}" wx:key="key" class="cell lv{{item.level}}"></view>
+    </view>
+    <view class="heat-legend">
+      <text>少</text>
+      <view class="cell lv0"></view>
+      <view class="cell lv1"></view>
+      <view class="cell lv2"></view>
+      <view class="cell lv3"></view>
+      <text>多</text>
+    </view>
+  </view>
+
+  <!-- 健康恢复时间线 -->
+  <view class="card anim-fade-up">
+    <view class="card-head">身体正在恢复</view>
+    <view class="timeline">
+      <view wx:for="{{milestones}}" wx:key="title" class="t-item {{item.reached ? 'on' : ''}}">
+        <view class="t-dot"></view>
+        <view class="t-body">
+          <view class="t-title">{{item.title}} <text wx:if="{{item.reached}}" class="t-done">✓</text></view>
+          <view class="t-desc">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

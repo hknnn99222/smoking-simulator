@@ -1,0 +1,24 @@
+<view class="draw-page">
+  <!-- 开盒前：神秘烟盒 -->
+  <view wx:if="{{phase !== 'reveal'}}" class="stage">
+    <view class="mystery {{phase === 'shaking' ? 'shaking' : ''}}" bindtap="onOpen">
+      <pack skin="{{mystery}}" size="draw" />
+    </view>
+    <view class="tip">{{phase === 'shaking' ? '正在开盒…' : '点一下，开盒'}}</view>
+  </view>
+
+  <!-- 揭晓 -->
+  <view wx:if="{{phase === 'reveal'}}" class="stage">
+    <view class="reveal-glow glow-{{result.rarity}}"></view>
+    <view class="result-card anim-flip">
+      <pack skin="{{result}}" size="draw" />
+    </view>
+    <view class="result-meta anim-fade-up">
+      <view class="result-name">{{result.name}}</view>
+      <view class="rarity-tag rarity-{{result.rarity}}">{{resultRarity.name}}</view>
+      <view class="result-line">{{line}}</view>
+      <view wx:if="{{count > 1}}" class="result-count">已拥有 ×{{count}}</view>
+    </view>
+    <button class="btn-gold ok-btn anim-fade-up" bindtap="onOk">收下并换上</button>
+  </view>
+</view>

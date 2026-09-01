@@ -1,0 +1,159 @@
+.container {
+  align-items: stretch;
+  gap: 24rpx;
+  padding-bottom: 60rpx;
+}
+
+.card-head {
+  font-size: 26rpx;
+  color: #d8dce2;
+  margin-bottom: 22rpx;
+}
+.gold {
+  color: #c8a063;
+  font-weight: 700;
+}
+
+/* 累计四格 */
+.grid4 {
+  display: flex;
+  justify-content: space-between;
+}
+.item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.item .v {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #c8a063;
+  text-align: center;
+}
+.item .k {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #8a8f99;
+}
+.sub-row {
+  margin-top: 20rpx;
+  font-size: 22rpx;
+  color: #8a8f99;
+  text-align: center;
+}
+
+/* 进度条 */
+.bar {
+  width: 100%;
+  height: 14rpx;
+  border-radius: 7rpx;
+  background: #2c3038;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  border-radius: 7rpx;
+  background: linear-gradient(90deg, #d8b276, #c8a063);
+  transition: width 0.4s ease;
+}
+
+/* 热力图 */
+.heat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+.cell {
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 8rpx;
+  background: #262a32;
+}
+.lv0 {
+  background: #262a32;
+}
+.lv1 {
+  background: rgba(200, 160, 99, 0.35);
+}
+.lv2 {
+  background: rgba(200, 160, 99, 0.65);
+}
+.lv3 {
+  background: #c8a063;
+}
+.heat-legend {
+  margin-top: 18rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 20rpx;
+  color: #8a8f99;
+}
+.heat-legend .cell {
+  width: 22rpx;
+  height: 22rpx;
+}
+
+/* 时间线 */
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+.t-item {
+  position: relative;
+  display: flex;
+  gap: 22rpx;
+  padding-bottom: 30rpx;
+}
+.t-item:last-child {
+  padding-bottom: 6rpx;
+}
+/* 连接线 */
+.t-item::before {
+  content: '';
+  position: absolute;
+  left: 9rpx;
+  top: 24rpx;
+  bottom: 0;
+  width: 2rpx;
+  background: #2c3038;
+}
+.t-item:last-child::before {
+  display: none;
+}
+.t-dot {
+  position: relative;
+  z-index: 1;
+  width: 20rpx;
+  height: 20rpx;
+  margin-top: 4rpx;
+  border-radius: 50%;
+  background: #2c3038;
+  border: 3rpx solid #3a3f48;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.t-item.on .t-dot {
+  background: #6fbf8f;
+  border-color: rgba(111, 191, 143, 0.4);
+}
+.t-title {
+  font-size: 26rpx;
+  color: #8a8f99;
+}
+.t-item.on .t-title {
+  color: #d8dce2;
+}
+.t-done {
+  color: #6fbf8f;
+  margin-left: 8rpx;
+}
+.t-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #6f7580;
+}
+.t-item.on .t-desc {
+  color: #8a919c;
+}

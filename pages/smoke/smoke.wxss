@@ -1,0 +1,206 @@
+.scene {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #101218;
+  animation: sceneIn 0.25s ease both;
+}
+
+@keyframes sceneIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 烟盒模糊背景：延迟淡入（纯 CSS，不动渲染树），把 blur 栅格化挪出进场关键路径 */
+.bg-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  animation: bgIn 0.6s ease 0.2s both;
+}
+
+@keyframes bgIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.bg-pack {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 750rpx;
+  height: 1000rpx;
+  transform: translate(-50%, -50%) scale(1.5) translateZ(0);
+  filter: blur(28px);
+  opacity: 0.6;
+}
+.bg-dim {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(16, 18, 24, 0.25) 0%,
+    rgba(16, 18, 24, 0.82) 78%
+  );
+}
+
+.cig-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* 返回 */
+.nav-back {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 20px) + 16rpx);
+  left: 24rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #d8dce2;
+  font-size: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+/* 提示 */
+.hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14vh;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 28rpx;
+  letter-spacing: 6rpx;
+  z-index: 4;
+}
+.puff-count {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 20px) + 28rpx);
+  right: 32rpx;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 24rpx;
+  z-index: 4;
+}
+
+/* 结算 */
+.settle-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 11, 14, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.settle-card {
+  width: 82%;
+  box-sizing: border-box;
+  background: #1e2128;
+  border: 1rpx solid #2c3038;
+  border-radius: 32rpx;
+  padding: 44rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.s-badge {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #c8a063;
+  letter-spacing: 2rpx;
+}
+.s-line {
+  margin-top: 20rpx;
+  font-size: 26rpx;
+  color: #b8bdc7;
+  text-align: center;
+}
+.s-rows {
+  margin-top: 32rpx;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+.s-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.s-k {
+  font-size: 22rpx;
+  color: #8a8f99;
+}
+.s-v {
+  margin-top: 8rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #8fd8b0;
+}
+.s-pack {
+  margin-top: 32rpx;
+  width: 100%;
+}
+.s-pack-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 22rpx;
+  color: #8a8f99;
+}
+.s-ticket {
+  color: #e8b64c;
+}
+.s-pack-bar {
+  margin-top: 12rpx;
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: #2c3038;
+  overflow: hidden;
+}
+.s-pack-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  background: linear-gradient(90deg, #d8b276, #c8a063);
+  transition: width 0.4s ease;
+}
+.s-btns {
+  margin-top: 40rpx;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.s-btn {
+  width: 100%;
+  height: 84rpx;
+  line-height: 84rpx;
+}
+.s-btn-ghost {
+  background: transparent;
+  color: #c8a063;
+  border: 1rpx solid rgba(200, 160, 99, 0.5);
+}

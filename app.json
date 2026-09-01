@@ -1,13 +1,50 @@
 {
   "pages": [
-    "pages/index/index"
+    "pages/index/index",
+    "pages/smoke/smoke",
+    "pages/box/box",
+    "pages/draw/draw",
+    "pages/stats/stats",
+    "pages/settings/settings"
   ],
   "window": {
-    "navigationBarTitleText": "吸烟模拟器",
+    "navigationBarTitleText": "戒一根",
     "navigationBarBackgroundColor": "#16181d",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#16181d",
     "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8a8f99",
+    "selectedColor": "#c8a063",
+    "backgroundColor": "#16181d",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "戒烟",
+        "iconPath": "images/tab/smoke.png",
+        "selectedIconPath": "images/tab/smoke-active.png"
+      },
+      {
+        "pagePath": "pages/box/box",
+        "text": "烟盒",
+        "iconPath": "images/tab/box.png",
+        "selectedIconPath": "images/tab/box-active.png"
+      },
+      {
+        "pagePath": "pages/stats/stats",
+        "text": "统计",
+        "iconPath": "images/tab/stats.png",
+        "selectedIconPath": "images/tab/stats-active.png"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "设置",
+        "iconPath": "images/tab/gear.png",
+        "selectedIconPath": "images/tab/gear-active.png"
+      }
+    ]
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
