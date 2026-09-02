@@ -30,6 +30,14 @@
 
     <view class="row">
       <view class="row-main">
+        <view class="row-title">音效</view>
+        <view class="row-sub">点火与吸入音（约 90KB，离线可用）</view>
+      </view>
+      <switch checked="{{profile.sound !== false}}" bindchange="onSoundChange" color="#c8a063" />
+    </view>
+
+    <view class="row">
+      <view class="row-main">
         <view class="row-title">戒烟起点</view>
         <view class="row-sub">健康恢复时间线从这天开始算</view>
       </view>

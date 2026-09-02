@@ -43,6 +43,13 @@ Page({
     this.setData({ cigIndex: idx, profile })
   },
 
+  onSoundChange(e) {
+    const profile = calc.getProfile()
+    profile.sound = e.detail.value
+    calc.saveProfile(profile)
+    this.setData({ profile })
+  },
+
   onDateChange(e) {
     const profile = calc.getProfile()
     const [y, m, d] = e.detail.value.split('-').map(Number)

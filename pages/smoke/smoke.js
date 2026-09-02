@@ -1,8 +1,13 @@
-// 抽烟会话页：Canvas 香烟 + 按住吸入/松开吐烟 + 结算
+// 抽烟会话页：完整状态机
+// 待机漂浮(未点燃) → 长按点火(火焰粒子+烟头渐红) → 燃烧待吸(微光+青烟)
+// → 按住吸入(火光+震动+吸阻音+烟灰增长) → 松手吐烟(烟雾团)
+// → 点按烟身抖灰 → 循环至燃尽 → 烟蒂弹飞 + 结算
 const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
 
 const BURN_MS = 12000 // 累计按住 12 秒烧完一根
+const LIGHT_MS = 1200 // 长按 1.2 秒完成点火
+const TAP_MS = 220 // 短于 220ms 视为点按（抖灰）而非吸入
 
 // 精灵图模块级缓存：同皮肤重复进入页面不重复烘焙
 const spriteCache = {}
@@ -10,7 +15,7 @@ const spriteCache = {}
 Page({
   data: {
     skin: null,
-    showHint: true,
+    phase: 'idle', // idle | lighting | burning | done
     puffs: 0,
     finished: false,
     showSettle: false,
@@ -19,16 +24,51 @@ Page({
 
   onLoad() {
     const skinStore = wx.getStorageSync('skins') || {}
-    const skin = skins.getSkin(skinStore.currentId)
-    this.skin = skin
-    this.setData({ skin })
+    this.skin = skins.getSkin(skinStore.currentId)
     // 场景状态
-    this.burn = 0
+    this.lit = false // 是否已点燃
+    this.lighting = false // 点火中
+    this.lightProg = 0 // 烟头红热进度 0~1
+    this.burn = 0 // 燃烧进度 0~1
     this.inhaling = false
-    this.started = false
-    this.added = false
+    this.ashExtra = 0 // 吸入累计的烟灰（抖灰可清）
+    this.floatY = 0 // 待机漂浮位移
+    this.floatKick = 0 // 抖灰冲击
+    this.buttFly = null // 燃尽弹飞的烟蒂
+    this.buttFlyAt = 0
     this.particles = []
     this.wispTimer = 0
+    this.started = false
+    this.added = false
+    // 音效
+    const profile = calc.getProfile()
+    this.soundOn = profile.sound !== false
+    this.audio = null
+    if (this.soundOn) this.initAudio()
+    this.setData({ skin: this.skin })
+  },
+
+  initAudio() {
+    try {
+      const mk = (src, vol) => {
+        const a = wx.createInnerAudioContext()
+        a.src = src
+        a.volume = vol
+        return a
+      }
+      this.audio = {
+        lighter: mk('/audio/lighter.wav', 0.6),
+        inhale: mk('/audio/inhale.wav', 0.55)
+      }
+    } catch (e) {
+      this.audio = null
+    }
+  },
+
+  play(name) {
+    if (this.audio && this.audio[name]) {
+      try { this.audio[name].play() } catch (e) { /* 音频失败不影响动画 */ }
+    }
   },
 
   onReady() {
@@ -75,6 +115,11 @@ Page({
 
   onUnload() {
     this.stopLoop()
+    if (this.audio) {
+      for (const k of Object.keys(this.audio)) {
+        try { this.audio[k].destroy() } catch (e) { /* 忽略 */ }
+      }
+    }
   },
 
   startLoop() {
@@ -95,27 +140,80 @@ Page({
   },
 
   // ---------- 交互 ----------
-  onTouchStart() {
-    if (this.data.finished || this.inhaling) return
+  onTouchStart(e) {
+    if (this.data.finished) return
+    const t = (e.touches && e.touches[0]) || {}
+    this.touchX = t.x
+    this.touchY = t.y
+    this.touchAt = Date.now()
+    if (!this.lit) {
+      if (this.lighting) return
+      this.lighting = true
+      this.play('lighter')
+      wx.vibrateShort({ type: 'light' })
+      this.setData({ phase: 'lighting' })
+      return
+    }
+    if (this.inhaling) return
     this.inhaling = true
     this.puffStart = Date.now()
-    if (!this.started) {
-      this.started = true
-      this.setData({ showHint: false })
-    }
+    this.play('inhale')
     wx.vibrateShort({ type: 'light' })
+    if (!this.started) this.started = true
   },
 
-  onTouchEnd() {
+  onTouchEnd(e) {
+    const dur = (Date.now() - (this.touchAt || Date.now())) / 1000
+    if (this.lighting && !this.lit) {
+      // 中途松手：点火失败，红热渐退
+      this.lighting = false
+      this.setData({ phase: 'idle' })
+      return
+    }
     if (!this.inhaling) return
     this.inhaling = false
-    const dur = (Date.now() - this.puffStart) / 1000
+    const t = (e.changedTouches && e.changedTouches[0]) || {}
+    const x = t.x !== undefined ? t.x : this.touchX
+    const y = t.y !== undefined ? t.y : this.touchY
+    this.dbg = { dur: +dur.toFixed(3), x, y, touchX: this.touchX, near: this.isNearCig(x, y) }
+    if (dur < TAP_MS / 1000 && this.isNearCig(x, y)) {
+      this.flickAsh() // 点按烟身：抖灰，不算一口
+      return
+    }
     this.setData({ puffs: this.data.puffs + 1 })
     this.spawnExhale(dur)
   },
 
+  isNearCig(x, y) {
+    if (!this.geo || x === undefined) return false
+    const g = this.geo
+    return x > g.x0 - 36 && x < g.x0 + g.len + 36 && Math.abs(y - g.cy) < 56
+  },
+
+  // 抖灰：烟灰段脱落
+  flickAsh() {
+    const tip = this.tipX()
+    const ashLen = this.currentAshLen()
+    for (let i = 0; i < 13; i++) {
+      this.particles.push({
+        type: 'ash',
+        x: tip + Math.random() * (ashLen + 6),
+        y: this.geo.cy + this.floatY + (Math.random() - 0.5) * 18,
+        vx: (Math.random() - 0.5) * 60,
+        vy: 30 + Math.random() * 70,
+        r: 1.5 + Math.random() * 3,
+        life: 0,
+        maxLife: 1.2 + Math.random() * 0.6,
+        seed: Math.random() * 100
+      })
+    }
+    this.ashExtra = 0
+    this.floatKick = 9 // 烟身轻弹
+    wx.vibrateShort({ type: 'light' })
+  },
+
   onBack() {
-    if (this.started && !this.data.finished) {
+    if (this.lit && !this.data.finished) {
       wx.showModal({
         title: '这根还没抽完',
         content: '现在退出不计入戒掉哦',
@@ -130,24 +228,27 @@ Page({
     wx.navigateBack()
   },
 
-  // ---------- 结算 ----------
+  // ---------- 燃尽 ----------
   finish() {
-    this.setData({ finished: true })
+    if (!this.lit) return
     this.inhaling = false
-    this.finishAt = this.t || Date.now() // 烟蒂渐隐的起点
+    this.lit = false
+    this.setData({ finished: true, phase: 'done' })
     wx.vibrateShort({ type: 'heavy' })
-    // 清场：残留烟雾 0.5 秒内散尽，避免盖住随后弹出的结算卡
+    // 清场：残留烟雾 0.5 秒内散尽，避免盖住结算卡
     for (const p of this.particles) {
       if (p.type === 'exhale' || p.type === 'wisp' || p.type === 'suck') {
         p.maxLife = Math.min(p.maxLife, p.life + 0.5)
       }
     }
     this.spawnAshFall()
-    setTimeout(() => this.showSettle(), 900)
-    // 烟灰落定后场景静止：停掉渲染循环，结算期间不再空转
+    // 0.45s 后烟蒂弹飞
+    this.buttFlyAt = (this.t || Date.now()) + 450
+    setTimeout(() => this.showSettle(), 1500)
+    // 弹飞离场、烟灰落定后停掉渲染循环
     setTimeout(() => {
       if (this.data.finished) this.stopLoop()
-    }, 2400)
+    }, 2600)
   },
 
   showSettle() {
@@ -170,13 +271,18 @@ Page({
   },
 
   onAgain() {
+    this.lit = false
+    this.lighting = false
+    this.lightProg = 0
     this.burn = 0
     this.inhaling = false
     this.started = false
     this.added = false
-    this.finishAt = 0
+    this.ashExtra = 0
+    this.buttFly = null
+    this.buttFlyAt = 0
     this.particles = []
-    this.setData({ showSettle: false, finished: false, puffs: 0, showHint: true })
+    this.setData({ showSettle: false, finished: false, puffs: 0, phase: 'idle' })
     this.startLoop()
   },
 
@@ -186,83 +292,6 @@ Page({
 
   goBox() {
     wx.switchTab({ url: '/pages/box/box' })
-  },
-
-  // ---------- 粒子 ----------
-  spawnExhale(durSec) {
-    const count = Math.min(48, Math.round(10 + durSec * 14))
-    for (let i = 0; i < count; i++) {
-      this.particles.push({
-        type: 'exhale',
-        x: this.W * 0.5 + (Math.random() - 0.5) * 70,
-        y: this.H * 0.66 + (Math.random() - 0.5) * 30,
-        vx: (Math.random() - 0.5) * 70,
-        vy: -(110 + Math.random() * 130),
-        r: 12 + Math.random() * 20,
-        life: 0,
-        maxLife: 1.7 + Math.random() * 0.9,
-        seed: Math.random() * 100
-      })
-    }
-  },
-
-  spawnSuck() {
-    const tip = this.tipX()
-    this.particles.push({
-      type: 'suck',
-      x: Math.min(tip + 40 + Math.random() * 70, this.W - 12),
-      y: this.geo.cy - 30 - Math.random() * 60,
-      vx: 0,
-      vy: 0,
-      r: 3 + Math.random() * 4,
-      life: 0,
-      maxLife: 0.55,
-      seed: Math.random() * 100
-    })
-  },
-
-  spawnWisp() {
-    const tip = this.tipX()
-    this.particles.push({
-      type: 'wisp',
-      x: tip + 4 + (Math.random() - 0.5) * 6,
-      y: this.geo.cy - 14,
-      vx: (Math.random() - 0.5) * 14,
-      vy: -(28 + Math.random() * 24),
-      r: 3 + Math.random() * 3,
-      life: 0,
-      maxLife: 1.6 + Math.random() * 0.8,
-      seed: Math.random() * 100
-    })
-  },
-
-  spawnAshFall() {
-    const tip = this.tipX()
-    for (let i = 0; i < 16; i++) {
-      this.particles.push({
-        type: 'ash',
-        x: tip + Math.random() * 16,
-        y: this.geo.cy + (Math.random() - 0.5) * 20,
-        vx: (Math.random() - 0.5) * 36,
-        vy: 30 + Math.random() * 50,
-        r: 2 + Math.random() * 2.5,
-        life: 0,
-        maxLife: 1.6 + Math.random() * 0.7,
-        seed: Math.random() * 100
-      })
-    }
-  },
-
-  // 诊断：返回自进入页面以来的平均帧率
-  getStats() {
-    if (!this.frames) return { fps: 0, frames: 0 }
-    return { fps: Math.round(this.frames / (this.frameMs / 1000)), frames: this.frames }
-  },
-
-  tipX() {
-    const g = this.geo
-    // 燃烧线随 burn 从最右端（满烟）向滤嘴推进：烟体缩短、烟灰变长
-    return g.x0 + g.len - (g.len - g.filterLen) * this.burn
   },
 
   // ---------- 精灵图：烟雾/火光一次性预渲染，逐帧 drawImage 零分配 ----------
@@ -307,6 +336,113 @@ Page({
     }
   },
 
+  // ---------- 粒子 ----------
+  spawnExhale(durSec) {
+    const count = Math.min(48, Math.round(10 + durSec * 14))
+    for (let i = 0; i < count; i++) {
+      this.particles.push({
+        type: 'exhale',
+        x: this.W * 0.5 + (Math.random() - 0.5) * 70,
+        y: this.H * 0.66 + (Math.random() - 0.5) * 30,
+        vx: (Math.random() - 0.5) * 70,
+        vy: -(110 + Math.random() * 130),
+        r: 12 + Math.random() * 20,
+        life: 0,
+        maxLife: 1.7 + Math.random() * 0.9,
+        seed: Math.random() * 100
+      })
+    }
+  },
+
+  spawnFlame() {
+    const tip = this.tipX()
+    this.particles.push({
+      type: 'flame',
+      x: tip + 2 + (Math.random() - 0.5) * 8,
+      y: this.geo.cy + this.floatY + (Math.random() - 0.5) * 8,
+      vx: (Math.random() - 0.5) * 30,
+      vy: -(50 + Math.random() * 90),
+      r: 2.5 + Math.random() * 3.5,
+      life: 0,
+      maxLife: 0.22 + Math.random() * 0.18,
+      seed: Math.random() * 100
+    })
+  },
+
+  spawnSuck() {
+    const tip = this.tipX()
+    this.particles.push({
+      type: 'suck',
+      x: Math.min(tip + 40 + Math.random() * 70, this.W - 12),
+      y: this.geo.cy + this.floatY - 30 - Math.random() * 60,
+      vx: 0,
+      vy: 0,
+      r: 3 + Math.random() * 4,
+      life: 0,
+      maxLife: 0.55,
+      seed: Math.random() * 100
+    })
+  },
+
+  spawnWisp() {
+    const tip = this.tipX()
+    this.particles.push({
+      type: 'wisp',
+      x: tip + 4 + (Math.random() - 0.5) * 6,
+      y: this.geo.cy + this.floatY - 14,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -(28 + Math.random() * 24),
+      r: 3 + Math.random() * 3,
+      life: 0,
+      maxLife: 1.6 + Math.random() * 0.8,
+      seed: Math.random() * 100
+    })
+  },
+
+  spawnAshFall() {
+    const tip = this.tipX()
+    for (let i = 0; i < 16; i++) {
+      this.particles.push({
+        type: 'ash',
+        x: tip + Math.random() * 16,
+        y: this.geo.cy + this.floatY + (Math.random() - 0.5) * 20,
+        vx: (Math.random() - 0.5) * 36,
+        vy: 30 + Math.random() * 50,
+        r: 2 + Math.random() * 2.5,
+        life: 0,
+        maxLife: 1.6 + Math.random() * 0.7,
+        seed: Math.random() * 100
+      })
+    }
+  },
+
+  tipX() {
+    const g = this.geo
+    // 燃烧线随 burn 从最右端（满烟）向滤嘴推进：烟体缩短、烟灰变长
+    return g.x0 + g.len - (g.len - g.filterLen) * this.burn
+  },
+
+  currentAshLen() {
+    return this.lit ? 4 + 18 * this.burn + this.ashExtra : 0
+  },
+
+  // 诊断：帧率与场景状态（测试/调试用）
+  getStats() {
+    const fps = this.frames ? Math.round(this.frames / (this.frameMs / 1000)) : 0
+    return {
+      fps,
+      frames: this.frames || 0,
+      phase: this.data.phase,
+      lit: this.lit,
+      lightProg: +this.lightProg.toFixed(2),
+      burn: +this.burn.toFixed(3),
+      ashExtra: +this.ashExtra.toFixed(2),
+      buttFly: !!this.buttFly,
+      dbg: this.dbg || null,
+      geo: this.geo ? { x0: Math.round(this.geo.x0), cy: Math.round(this.geo.cy), len: Math.round(this.geo.len) } : null
+    }
+  },
+
   // ---------- 主循环 ----------
   tick(now) {
     // 帧率限制：rAF 在部分环境未按垂直同步节流（实测开发者工具会跑到 180fps），
@@ -322,16 +458,70 @@ Page({
     this.frames = (this.frames || 0) + 1
     this.frameMs = (this.frameMs || 0) + dt * 1000
 
+    // 待机漂浮 + 抖灰冲击衰减
+    this.floatKick = Math.max(0, this.floatKick - 40 * dt)
+    this.floatY = Math.sin(now / 900) * 4 - this.floatKick
+
+    // 点火推进 / 红热消退
+    if (this.lighting && !this.lit) {
+      this.lightProg = Math.min(1, this.lightProg + dt * (1000 / LIGHT_MS))
+      if (Math.random() < 0.85) this.spawnFlame()
+      if (this.lightProg >= 1) {
+        this.lit = true
+        this.lighting = false
+        this.started = true
+        this.setData({ phase: 'burning' })
+        wx.vibrateShort({ type: 'light' })
+      }
+    } else if (!this.lit && this.lightProg > 0) {
+      this.lightProg = Math.max(0, this.lightProg - dt * 2)
+    }
+
     if (this.inhaling) {
       this.burn = Math.min(1, this.burn + dt * (1000 / BURN_MS))
+      this.ashExtra = Math.min(14, this.ashExtra + dt * 3)
       if (Math.random() < 0.7) this.spawnSuck()
       if (this.burn >= 1) this.finish()
-    } else if (!this.data.finished) {
+    } else if (this.lit && !this.data.finished) {
+      // 燃烧待吸：细缕青烟
       this.wispTimer += dt
       if (this.wispTimer > 0.32) {
         this.wispTimer = 0
         this.spawnWisp()
       }
+    }
+
+    // 燃尽弹飞
+    if (this.buttFlyAt && now >= this.buttFlyAt && !this.buttFly) {
+      this.buttFly = {
+        x: this.geo.x0 + this.geo.filterLen / 2,
+        y: this.geo.cy + this.floatY,
+        vx: 360 + Math.random() * 140,
+        vy: -560,
+        rot: 0,
+        vr: 9 + Math.random() * 4
+      }
+    }
+    if (this.buttFly) {
+      const b = this.buttFly
+      b.vy += 1300 * dt
+      b.x += b.vx * dt
+      b.y += b.vy * dt
+      b.rot += b.vr * dt
+      if (Math.random() < 0.5) {
+        this.particles.push({
+          type: 'ash',
+          x: b.x,
+          y: b.y,
+          vx: (Math.random() - 0.5) * 40,
+          vy: 20,
+          r: 1 + Math.random() * 1.5,
+          life: 0,
+          maxLife: 0.7,
+          seed: Math.random() * 100
+        })
+      }
+      if (b.x > this.W + 90 || b.y > this.H + 90 || b.x < -90) this.buttFly = null
     }
 
     this.updateParticles(dt, now)
@@ -361,9 +551,13 @@ Page({
         p.y += p.vy * dt
         p.r += 6 * dt
         p.alpha = (1 - lr) * 0.22
+      } else if (p.type === 'flame') {
+        p.x += p.vx * dt
+        p.y += p.vy * dt
+        p.alpha = (1 - lr) * 0.9
       } else if (p.type === 'suck') {
         const dx = tip + 4 - p.x
-        const dy = this.geo.cy - p.y
+        const dy = this.geo.cy + this.floatY - p.y
         const d = Math.sqrt(dx * dx + dy * dy) || 1
         if (d < 14) {
           list.splice(i, 1)
@@ -405,25 +599,34 @@ Page({
     const H = this.H
     ctx.clearRect(0, 0, W, H)
 
+    // 燃尽弹飞：画旋转飞出的烟蒂，不再画正常烟支
+    if (this.buttFly) {
+      const b = this.buttFly
+      const h = g.h
+      const len = g.filterLen * 0.9
+      ctx.save()
+      ctx.translate(b.x, b.y)
+      ctx.rotate(b.rot)
+      ctx.fillStyle = cig.filter
+      this.rr(-len / 2, -h / 2, len, h, 6)
+      ctx.fill()
+      ctx.fillStyle = cig.ash
+      this.rr(len / 2 - 3, -h / 2 + 2, 7, h - 4, 3)
+      ctx.fill()
+      ctx.restore()
+      this.drawParticles(now, smokeRGB, H)
+      return
+    }
+
     const tip = this.tipX()
     const h = g.h
-    const top = g.cy - h / 2
-
-    // 烧完 1.2s 后整支烟（含烟蒂）渐隐掐灭；消失后仅剩烟灰/余烟粒子
-    let cigAlpha = 1
-    if (this.finishAt) {
-      cigAlpha = Math.max(0, 1 - (now - this.finishAt - 1200) / 600)
-      if (cigAlpha <= 0) {
-        this.drawParticles(now, smokeRGB, H)
-        return
-      }
-    }
-    ctx.globalAlpha = cigAlpha
+    const cy = g.cy + this.floatY
+    const top = cy - h / 2
 
     // 投影
     ctx.fillStyle = 'rgba(0,0,0,0.3)'
     ctx.beginPath()
-    ctx.ellipse(W / 2, g.cy + h * 1.2, g.len * 0.42, 7, 0, 0, Math.PI * 2)
+    ctx.ellipse(W / 2, cy + h * 1.2, g.len * 0.42, 7, 0, 0, Math.PI * 2)
     ctx.fill()
 
     // 滤嘴（左段）
@@ -442,7 +645,7 @@ Page({
       ctx.lineTo(x, top + h - ringInset)
       ctx.stroke()
     })
-    ctx.globalAlpha = cigAlpha
+    ctx.globalAlpha = 1
 
     // 烟体（燃烧缩短）
     if (tip > g.x0 + g.filterLen + 1) {
@@ -458,62 +661,70 @@ Page({
       ctx.stroke()
     }
 
-    // 烟灰（燃烧端右侧）
-    const ashLen = 4 + 18 * this.burn
-    ctx.fillStyle = cig.ash
-    this.rr(tip, top - 2, ashLen, h + 4, 5)
-    ctx.fill()
-    // 灰上裂纹
-    ctx.strokeStyle = 'rgba(0,0,0,0.28)'
-    ctx.lineWidth = 1.5
-    for (let i = 1; i <= 2; i++) {
-      const x = tip + ashLen * (i * 0.32)
-      ctx.beginPath()
-      ctx.moveTo(x, top + 3)
-      ctx.lineTo(x + 3, top + h - 3)
-      ctx.stroke()
+    // 烟灰（燃烧端右侧，点燃后才有）
+    const ashLen = this.currentAshLen()
+    if (ashLen > 0) {
+      ctx.fillStyle = cig.ash
+      this.rr(tip, top - 2, ashLen, h + 4, 5)
+      ctx.fill()
+      // 灰上裂纹
+      ctx.strokeStyle = 'rgba(0,0,0,0.28)'
+      ctx.lineWidth = 1.5
+      for (let i = 1; i <= 2; i++) {
+        const x = tip + ashLen * (i * 0.32)
+        ctx.beginPath()
+        ctx.moveTo(x, top + 3)
+        ctx.lineTo(x + 3, top + h - 3)
+        ctx.stroke()
+      }
+    } else if (!this.lit && this.lightProg === 0) {
+      // 未点燃：烟丝端深色小截面
+      ctx.fillStyle = 'rgba(0,0,0,0.22)'
+      this.rr(tip - 3, top + 2, 5, h - 4, 2)
+      ctx.fill()
     }
 
-    // 火光：吸入时爆亮，待机时余烬微光（精灵图绘制，失败兜底现场渐变）
-    const glow = this.inhaling
-      ? 0.85 + 0.15 * Math.sin(now / 45)
-      : 0.32 + 0.08 * Math.sin(now / 240)
-    const emberX = tip + 2
-    ctx.globalCompositeOperation = 'lighter'
-    if (this.sprites) {
-      const glowR = 30 + 18 * glow
-      ctx.globalAlpha = 0.5 * glow
-      ctx.drawImage(this.sprites.glow, emberX - glowR, g.cy - glowR, glowR * 2, glowR * 2)
-      const coreR = 6 + 2 * glow
-      ctx.globalAlpha = 0.55 + 0.45 * glow
-      ctx.drawImage(this.sprites.core, emberX - coreR, g.cy - coreR, coreR * 2, coreR * 2)
-      ctx.globalAlpha = cigAlpha
-    } else {
-      // 外圈光晕
-      const gr = ctx.createRadialGradient(emberX, g.cy, 0, emberX, g.cy, 30 + 18 * glow)
-      gr.addColorStop(0, 'rgba(255,150,60,' + 0.3 * glow + ')')
-      gr.addColorStop(1, 'rgba(255,150,60,0)')
-      ctx.fillStyle = gr
-      ctx.beginPath()
-      ctx.arc(emberX, g.cy, 30 + 18 * glow, 0, Math.PI * 2)
-      ctx.fill()
-      // 炭火核心
-      const core = ctx.createRadialGradient(emberX, g.cy, 0, emberX, g.cy, 6)
-      core.addColorStop(0, 'rgba(255,228,160,' + (0.55 + 0.45 * glow) + ')')
-      core.addColorStop(0.6, 'rgba(255,110,45,' + (0.4 + 0.5 * glow) + ')')
-      core.addColorStop(1, 'rgba(255,80,30,0)')
-      ctx.fillStyle = core
-      ctx.beginPath()
-      ctx.arc(emberX, g.cy, 6, 0, Math.PI * 2)
-      ctx.fill()
+    // 火光：点火渐红 → 吸入爆亮 → 待机余烬微光
+    let glow = 0
+    if (!this.lit) glow = this.lightProg * 0.95
+    else if (this.inhaling) glow = 0.85 + 0.15 * Math.sin(now / 45)
+    else glow = 0.32 + 0.08 * Math.sin(now / 240)
+
+    if (glow > 0.02) {
+      const emberX = tip + 2
+      ctx.globalCompositeOperation = 'lighter'
+      if (this.sprites) {
+        const glowR = 30 + 18 * glow
+        ctx.globalAlpha = 0.5 * glow
+        ctx.drawImage(this.sprites.glow, emberX - glowR, cy - glowR, glowR * 2, glowR * 2)
+        const coreR = 6 + 2 * glow
+        ctx.globalAlpha = 0.55 + 0.45 * glow
+        ctx.drawImage(this.sprites.core, emberX - coreR, cy - coreR, coreR * 2, coreR * 2)
+        ctx.globalAlpha = 1
+      } else {
+        const gr = ctx.createRadialGradient(emberX, cy, 0, emberX, cy, 30 + 18 * glow)
+        gr.addColorStop(0, 'rgba(255,150,60,' + 0.3 * glow + ')')
+        gr.addColorStop(1, 'rgba(255,150,60,0)')
+        ctx.fillStyle = gr
+        ctx.beginPath()
+        ctx.arc(emberX, cy, 30 + 18 * glow, 0, Math.PI * 2)
+        ctx.fill()
+        const core = ctx.createRadialGradient(emberX, cy, 0, emberX, cy, 6)
+        core.addColorStop(0, 'rgba(255,228,160,' + (0.55 + 0.45 * glow) + ')')
+        core.addColorStop(0.6, 'rgba(255,110,45,' + (0.4 + 0.5 * glow) + ')')
+        core.addColorStop(1, 'rgba(255,80,30,0)')
+        ctx.fillStyle = core
+        ctx.beginPath()
+        ctx.arc(emberX, cy, 6, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.globalCompositeOperation = 'source-over'
     }
-    ctx.globalCompositeOperation = 'source-over'
-    ctx.globalAlpha = 1
 
     this.drawParticles(now, smokeRGB, H)
   },
 
-  // 粒子：跳过近透明/离屏；烟雾走精灵图，烟灰走实心小圆
+  // 粒子：跳过近透明/离屏；烟雾走精灵图，烟灰实心，火焰加色
   drawParticles(now, smokeRGB, H) {
     const ctx = this.ctx
     const sp = this.sprites
@@ -525,6 +736,17 @@ Page({
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx.fill()
+      } else if (p.type === 'flame') {
+        ctx.globalCompositeOperation = 'lighter'
+        ctx.fillStyle = 'rgba(255,150,50,' + p.alpha * 0.85 + ')'
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = 'rgba(255,225,130,' + p.alpha * 0.7 + ')'
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r * 0.55, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.globalCompositeOperation = 'source-over'
       } else if (sp) {
         ctx.globalAlpha = p.alpha
         const d = p.r * 2

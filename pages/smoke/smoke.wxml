@@ -20,9 +20,12 @@
   <!-- 自定义返回 -->
   <view class="nav-back" bindtap="onBack">‹</view>
 
-  <!-- 操作提示 -->
-  <view wx:if="{{showHint}}" class="hint anim-fade-up">按住吸入 · 松开吐烟</view>
-  <view wx:if="{{puffs > 0 && !finished}}" class="puff-count">第 {{puffs}} 口</view>
+  <!-- 分阶段操作提示 -->
+  <view wx:if="{{phase === 'idle'}}" class="hint anim-fade-up">长按点火</view>
+  <view wx:elif="{{phase === 'lighting'}}" class="hint">点火中…</view>
+  <view wx:elif="{{phase === 'burning' && puffs === 0}}" class="hint">按住吸入 · 松开吐烟</view>
+  <view wx:elif="{{phase === 'burning'}}" class="hint">点按烟身抖灰</view>
+  <view wx:if="{{puffs > 0 && phase === 'burning'}}" class="puff-count">第 {{puffs}} 口</view>
 
   <!-- 结算卡 -->
   <view wx:if="{{showSettle}}" class="settle-mask">
