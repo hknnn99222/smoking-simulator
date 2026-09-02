@@ -31,7 +31,9 @@
       bindtap="onPick"
     >
       <pack skin="{{item.skin}}" size="grid" mode="{{item.owned ? 'full' : 'silhouette'}}" />
-      <view class="cell-name">{{item.owned ? item.skin.name : '？？？'}}</view>
+      <view class="cell-name">
+        {{item.owned ? item.skin.name : (item.skin.hidden ? '碎片 ' + frags.count + '/' + frags.need : '？？？')}}
+      </view>
       <view class="rarity-tag rarity-{{item.skin.rarity}}">{{item.rarityName}}</view>
       <view wx:if="{{item.count > 1}}" class="dup">×{{item.count}}</view>
       <view wx:if="{{item.isCurrent}}" class="using">使用中</view>

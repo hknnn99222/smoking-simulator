@@ -136,6 +136,21 @@
   color: #c8a063;
   letter-spacing: 2rpx;
 }
+.s-egg {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #ff8fa3;
+  letter-spacing: 2rpx;
+}
+.s-frag {
+  margin-top: 20rpx;
+  padding: 14rpx 24rpx;
+  border-radius: 14rpx;
+  background: rgba(232, 182, 76, 0.1);
+  border: 1rpx solid rgba(232, 182, 76, 0.35);
+  color: #e8b64c;
+  font-size: 24rpx;
+}
 .s-line {
   margin-top: 20rpx;
   font-size: 26rpx;

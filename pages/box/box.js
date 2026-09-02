@@ -1,6 +1,7 @@
-// 烟盒收藏：换肤 + 开盒入口
+// 烟盒收藏：换肤 + 开盒入口 + 隐藏皮肤碎片进度
 const calc = require('../../utils/calc')
 const skins = require('../../utils/skins')
+const eggs = require('../../utils/eggs')
 
 Page({
   data: {
@@ -10,7 +11,8 @@ Page({
     collected: 0,
     total: skins.SKINS.length,
     allCollected: false,
-    cigsToNext: 20
+    cigsToNext: 20,
+    frags: { count: 0, need: eggs.FRAGS_NEED }
   },
 
   onShow() {
@@ -36,15 +38,20 @@ Page({
       draws,
       collected,
       allCollected: collected === skins.SKINS.length,
-      cigsToNext: calc.cigsToNextTicket(total, draws)
+      cigsToNext: calc.cigsToNextTicket(total, draws),
+      frags: eggs.fragProgress()
     })
   },
 
   onPick(e) {
     const idx = Number(e.currentTarget.dataset.idx)
     const item = this.data.list[idx]
-    if (!item || !item.owned) {
-      wx.showToast({ title: '还未拥有，去开盒抽它', icon: 'none' })
+    if (!item) return
+    if (!item.owned) {
+      const hint = item.skin.hidden
+        ? '隐藏款：烟蒂掉落碎片集齐 ' + eggs.FRAGS_NEED + ' 片解锁'
+        : '还未拥有，去开盒抽它'
+      wx.showToast({ title: hint, icon: 'none' })
       return
     }
     const store = wx.getStorageSync('skins') || {}

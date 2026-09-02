@@ -31,6 +31,7 @@
   <view wx:if="{{showSettle}}" class="settle-mask">
     <view class="settle-card anim-pop">
       <view class="s-badge">第 {{settle.total}} 根 · 戒掉了</view>
+      <view wx:if="{{settle.egg}}" class="s-egg">✨ 彩蛋 · {{settle.egg}}</view>
       <view class="s-line">「{{settle.line}}」</view>
       <view class="s-rows">
         <view class="s-row">
@@ -50,6 +51,9 @@
         <view class="s-pack-bar">
           <view class="s-pack-fill" style="width: {{settle.inPack * 5}}%"></view>
         </view>
+      </view>
+      <view wx:if="{{settle.frag}}" class="s-frag">
+        🎁 烟蒂掉落隐藏皮肤碎片 {{settle.frag.count}}/10<text wx:if="{{settle.frag.unlocked}}"> · 集齐，解锁「彩虹」！</text>
       </view>
       <view class="s-btns">
         <button wx:if="{{settle.ticketEarned}}" class="btn-gold s-btn" bindtap="goBox">开盒</button>

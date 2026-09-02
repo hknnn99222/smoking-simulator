@@ -71,6 +71,11 @@ page {
   border-color: #6b5420;
   background: rgba(232, 182, 76, 0.1);
 }
+.rarity-hidden {
+  color: #ff8fa3;
+  border-color: #6b3546;
+  background: rgba(255, 143, 163, 0.1);
+}
 
 /* 通用入场动画 */
 @keyframes fadeUp {

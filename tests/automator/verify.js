@@ -123,6 +123,69 @@ async function main() {
   st = await page.callMethod('getStats')
   ok('再戒一根重置回待机', d.showSettle === false && d.phase === 'idle' && st.lit === false, st)
 
+  // ---------- 彩蛋：替身棒棒糖 ----------
+  await page.callMethod('debugEgg', 'sub')
+  st = await page.callMethod('getStats')
+  ok('彩蛋替身生效', st.sub === 'lollipop', st.sub)
+  await page.callMethod('onTouchStart', {})
+  await sleep(1400)
+  await page.callMethod('onTouchEnd', {})
+  await sleep(200)
+  await page.callMethod('onTouchStart', {})
+  await sleep(1500)
+  await page.callMethod('onTouchEnd', {})
+  await sleep(300)
+  await shot(mp, 'egg-sub')
+  await page.callMethod('finish')
+  await sleep(1900)
+  d = await page.data()
+  ok('替身结算文案与彩蛋标签', d.settle && d.settle.egg === '替身 · 棒棒糖' && d.settle.line.indexOf('棒棒糖') >= 0, d.settle && { egg: d.settle.egg, line: d.settle.line })
+  await page.callMethod('onAgain')
+  await sleep(300)
+
+  // ---------- 彩蛋：心形烟圈 ----------
+  await page.callMethod('debugEgg', 'heart')
+  await page.callMethod('onTouchStart', {})
+  await sleep(1400)
+  await page.callMethod('onTouchEnd', {})
+  await sleep(200)
+  await page.callMethod('onTouchStart', {})
+  await sleep(700)
+  await page.callMethod('onTouchEnd', {})
+  await sleep(400)
+  await shot(mp, 'egg-heart')
+
+  // ---------- 彩蛋：七彩烟 ----------
+  await page.callMethod('debugEgg', 'rainbow')
+  await page.callMethod('onTouchStart', {})
+  await sleep(700)
+  await page.callMethod('onTouchEnd', {})
+  await sleep(300)
+  await shot(mp, 'egg-rainbow')
+
+  // ---------- 彩蛋：隐藏皮肤碎片 ----------
+  await page.callMethod('onAgain')
+  await sleep(300)
+  await page.callMethod('debugEgg', 'frag')
+  await page.callMethod('onTouchStart', {})
+  await sleep(1400)
+  await page.callMethod('onTouchEnd', {})
+  await page.callMethod('finish')
+  await sleep(1900)
+  d = await page.data()
+  const fragStore = await mp.evaluate(() => wx.getStorageSync('skins'))
+  ok('碎片掉落入库+结算展示', d.settle && d.settle.frag && fragStore.frags >= 1, { settleFrag: d.settle && d.settle.frag, storeFrags: fragStore.frags })
+  await shot(mp, 'egg-frag')
+  // 复位：清彩蛋残留数据（保留一条今日记录以维持 streak 断言语义）
+  await mp.evaluate(() => {
+    const d = new Date()
+    const pad = n => (n < 10 ? '0' : '') + n
+    const k = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+    wx.setStorageSync('skins', { owned: { redgold: 1 }, currentId: 'redgold', totalDraws: 0, frags: 0 })
+    wx.setStorageSync('total', 0)
+    wx.setStorageSync('days', { [k]: 1 })
+  })
+
   // ---------- 抽奖：凑满一包 ----------
   await mp.evaluate(() => {
     wx.setStorageSync('total', 20)

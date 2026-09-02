@@ -3,7 +3,8 @@
 const RARITY = {
   common: { key: 'common', name: '普通', weight: 60, color: '#aeb6c2', glow: 'rgba(255,255,255,.5)' },
   rare: { key: 'rare', name: '稀有', weight: 30, color: '#7c8cff', glow: 'rgba(124,140,255,.55)' },
-  legend: { key: 'legend', name: '传说', weight: 10, color: '#e8b64c', glow: 'rgba(255,213,0,.6)' }
+  legend: { key: 'legend', name: '传说', weight: 10, color: '#e8b64c', glow: 'rgba(255,213,0,.6)' },
+  hidden: { key: 'hidden', name: '隐藏', weight: 0, color: '#ff8fa3', glow: 'rgba(255,143,163,.6)' }
 }
 
 // box: 烟盒配色；cig: 配套烟支配色；smoke: 烟雾 RGB 字符串
@@ -55,6 +56,13 @@ const SKINS = [
     box: { top: '#f0d488', bottom: '#9c6f1a', band: '#fff8e0', text: '#5c4310', pattern: 'foil' },
     cig: { body: '#fbf5e3', filter: '#e8c568', ring: '#9c6f1a', ash: '#b8b09a' },
     smoke: '250,240,210'
+  },
+  {
+    // 隐藏皮肤：仅可通过烟蒂掉落碎片集齐解锁，不在开盒奖池
+    id: 'rainbow', name: '彩虹', rarity: 'hidden', hidden: true, label: '七彩限定',
+    box: { top: '#ff8fa3', bottom: '#7c8cff', band: '#ffffff', text: '#ffffff', pattern: 'rainbow' },
+    cig: { body: '#faf6ff', filter: '#e8dcff', ring: '#7c8cff', ash: '#c8c2d8' },
+    smoke: '255,205,235'
   }
 ]
 
@@ -75,9 +83,9 @@ function initialSkinId() {
   return s ? s.id : SKINS[0].id
 }
 
-// 抽奖：先按稀有度权重 roll（仅含有可抽皮肤的档位），再档内均匀
+// 抽奖：先按稀有度权重 roll（仅含有可抽皮肤的档位），再档内均匀；隐藏款不入池
 function rollSkin() {
-  const keys = Object.keys(RARITY).filter(k => SKINS.some(s => s.rarity === k && !s.initial))
+  const keys = Object.keys(RARITY).filter(k => SKINS.some(s => s.rarity === k && !s.initial && !s.hidden))
   const total = keys.reduce((sum, k) => sum + RARITY[k].weight, 0)
   let r = Math.random() * total
   let hit = keys[0]
@@ -85,7 +93,7 @@ function rollSkin() {
     r -= RARITY[k].weight
     if (r <= 0) { hit = k; break }
   }
-  const pool = SKINS.filter(s => s.rarity === hit && !s.initial)
+  const pool = SKINS.filter(s => s.rarity === hit && !s.initial && !s.hidden)
   return pool[Math.floor(Math.random() * pool.length)]
 }
 

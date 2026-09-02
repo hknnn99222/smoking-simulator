@@ -92,11 +92,12 @@ calc.clearAll()
 ok('清空后回到初始态', calc.getTotal() === 0 && wx.getStorageSync('skins').owned.redgold === 1)
 
 // ---------- skins：定义完整性 ----------
-ok('共 8 款皮肤', skins.SKINS.length === 8)
+ok('共 9 款皮肤（含 1 隐藏）', skins.SKINS.length === 9)
 ok('初始款唯一', skins.SKINS.filter(s => s.initial).length === 1)
-const byRarity = { common: 0, rare: 0, legend: 0 }
+ok('隐藏款唯一', skins.SKINS.filter(s => s.hidden).length === 1 && skins.SKINS.find(s => s.hidden).id === 'rainbow')
+const byRarity = { common: 0, rare: 0, legend: 0, hidden: 0 }
 skins.SKINS.forEach(s => byRarity[s.rarity]++)
-ok('稀有度分布 4/3/1', byRarity.common === 4 && byRarity.rare === 3 && byRarity.legend === 1, byRarity)
+ok('稀有度分布 4/3/1/1(隐藏)', byRarity.common === 4 && byRarity.rare === 3 && byRarity.legend === 1 && byRarity.hidden === 1, byRarity)
 ok('每款配色字段齐全', skins.SKINS.every(s => s.box.top && s.box.bottom && s.box.band && s.cig.body && s.cig.filter && s.smoke))
 ok('getSkin 兜底', skins.getSkin('不存在的id').id === 'redgold')
 
@@ -112,11 +113,11 @@ for (let i = 0; i < N; i++) {
 near('roll 分布：普通 ≈60%', dist.common / N * 100, 60, 1.5)
 near('roll 分布：稀有 ≈30%', dist.rare / N * 100, 30, 1.5)
 near('roll 分布：传说 ≈10%', dist.legend / N * 100, 10, 1.2)
-ok('roll 池：只出 7 款可抽皮肤', Object.keys(ids).length === 7 && !ids['redgold'])
+ok('roll 池：只出 7 款可抽皮肤（初始与隐藏不入池）', Object.keys(ids).length === 7 && !ids['redgold'] && !ids['rainbow'], Object.keys(ids))
 // 档内均匀：每款频次应接近其所在档的期望（普通≈N*60%/3，稀有≈N*30%/3，传说≈N*10%）
 const tierMean = { common: N * 0.6 / 3, rare: N * 0.3 / 3, legend: N * 0.1 }
 const tierSpread = {}
-skins.SKINS.filter(s => !s.initial).forEach(s => {
+skins.SKINS.filter(s => !s.initial && !s.hidden).forEach(s => {
   const dev = Math.abs(ids[s.id] - tierMean[s.rarity]) / tierMean[s.rarity]
   tierSpread[s.id] = Math.round(dev * 100)
 })
@@ -125,6 +126,26 @@ ok('档内均匀：各款偏差 <12%', Object.values(tierSpread).every(v => v < 
 // ---------- skins：文案 ----------
 ok('renderLine 占位替换', skins.renderLine('{name} ×{n}', { name: '黑冰', n: 3 }) === '黑冰 ×3')
 ok('结算文案库非空且随机', typeof skins.pick(skins.SETTLEMENT_LINES) === 'string')
+
+// ---------- eggs：彩蛋 ----------
+const eggs = require(path.join(__dirname, '..', 'utils', 'eggs.js'))
+ok('彩蛋概率总和低于 15%（低概率设定）', eggs.P.substitute + eggs.P.heart + eggs.P.rainbow + eggs.P.frag < 0.15, eggs.P)
+ok('替身共 5 款且字段齐全', eggs.SUBSTITUTES.length === 5 && eggs.SUBSTITUTES.every(s => s.id && s.name && s.stick && s.body && s.smoke && s.line))
+// 统计法：低概率事件不应高发（10000 次抽替身，命中率应显著低于 10%）
+let subHits = 0
+for (let i = 0; i < 10000; i++) if (eggs.rollSubstitute()) subHits++
+ok('替身概率低（<6%）', subHits / 10000 < 0.06 && subHits / 10000 > 0.005, subHits / 10000)
+ok('彩虹取色循环', eggs.rainbowColor(0) === eggs.rainbowColor(7) && eggs.rainbowColor(1) !== eggs.rainbowColor(2))
+// 碎片：累计与解锁
+Object.keys(__store).forEach(k => delete __store[k])
+let unlockedAt = 0
+for (let i = 1; i <= eggs.FRAGS_NEED; i++) {
+  const r = eggs.addFrag()
+  if (r.unlocked) unlockedAt = i
+}
+ok('碎片集满解锁隐藏皮肤', unlockedAt === eggs.FRAGS_NEED && __store.skins.owned.rainbow === 1 && __store.skins.frags === 0, { unlockedAt })
+ok('已解锁后不再重复解锁', eggs.addFrag().unlocked === false && eggs.addFrag().unlocked === false)
+ok('碎片进度展示', eggs.fragProgress().need === eggs.FRAGS_NEED)
 
 console.log(`\n结果：${passed} 通过，${failed} 失败`)
 process.exit(failed ? 1 : 0)
